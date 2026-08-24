@@ -3,13 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Serverless real-estate lead generation + cold outreach pipeline for Vercel",
+  "description": "Serverless real-estate lead generation + cold outreach pipeline for Vercel, with an App Router monitoring dashboard",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "deploy": "vercel deploy --prod",
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "googleapis": "^144.0.0",
     "resend": "^3.5.0",
     "@upstash/qstash": "^2.0.0",
