@@ -6,11 +6,11 @@ function check(name, cond) {
   else { fail++; console.log("FAIL", name); }
 }
 
-// 1. default sender when FROM_EMAIL unset
+// 1. default sender (live env read)
 delete process.env.FROM_EMAIL;
 check("default sender = sales@scapiab2b.com", getFromEmail() === "sales@scapiab2b.com");
 
-// 2. custom sender when FROM_EMAIL set
+// 2. custom sender honoured (live env read)
 process.env.FROM_EMAIL = "custom@scapiab2b.com";
 check("custom sender honoured", getFromEmail() === "custom@scapiab2b.com");
 
@@ -23,12 +23,12 @@ check("fallback sender used", m.from === "custom@scapiab2b.com");
 check("fallback subject mentions company", m.subject.includes("Acme Realty"));
 check("fallback html has unsubscribe link", m.html.includes("Unsubscribe"));
 
-// 4. custom subject + body templates with placeholder substitution
+// 4. custom subject + plain-text body with real newline conversion
 process.env.EMAIL_SUBJECT = "Hello {{company}} in {{location}}";
-process.env.EMAIL_BODY_TEMPLATE = "<p>Hi {{company}}, contact {{email}}</p>";
+process.env.EMAIL_BODY_TEMPLATE = "Hi {{company}},\n\ncontact {{email}}";
 m = buildEmail(lead);
 check("custom subject substituted", m.subject === "Hello Acme Realty in Austin");
-check("custom body substituted", m.html === "<p>Hi Acme Realty, contact a@acme.com</p>");
+check("custom body is plain text w/ real newlines (no html)", m.text === "Hi Acme Realty,\n\ncontact a@acme.com" && m.html === undefined);
 
 // 5. unknown placeholder -> empty string
 check("unknown placeholder empties", renderTemplate("x{{nope}}y", lead) === "xy");

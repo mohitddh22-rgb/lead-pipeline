@@ -69,3 +69,13 @@ Outbound cold email is fully configurable without code changes:
 - `EMAIL_BODY_TEMPLATE` — HTML body template with the same placeholders.
 When `EMAIL_SUBJECT` / `EMAIL_BODY_TEMPLATE` are not set, the pipeline falls back
 to auto-generated lead messaging. Run `npm test` to exercise the template logic.
+
+## Email body format
+`EMAIL_BODY_TEMPLATE` is sent as **plain text** (no HTML wrappers). A literal `\n`
+in the value is converted to a real line break, so multi-line templates render
+correctly. Supported placeholders: `{{company}} {{location}} {{email}} {{region}}
+{{website}} {{first_name}}` — `{{first_name}}` is derived from the lead's email
+local-part when name-like, otherwise "there". When `EMAIL_BODY_TEMPLATE` is unset,
+the pipeline falls back to an auto-generated HTML lead message. Set `EMAIL_SUBJECT`
+and `EMAIL_BODY_TEMPLATE` in the Vercel dashboard (Project → Settings → Environment
+Variables) or a local `.env.local`.
