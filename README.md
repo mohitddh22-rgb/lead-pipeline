@@ -64,7 +64,7 @@ When `QSTASH_TOKEN` (+ signing keys) is set:
 
 ## Dynamic email templates
 Outbound cold email is fully configurable without code changes:
-- `FROM_EMAIL` — sender (defaults to `sales@scapiab2b.com`).
+- `FROM_EMAIL` — sender (defaults to `sales@spaciab2b.com`).
 - `EMAIL_SUBJECT` — subject template; supports `{{company}} {{location}} {{email}} {{region}} {{website}}`.
 - `EMAIL_BODY_TEMPLATE` — HTML body template with the same placeholders.
 When `EMAIL_SUBJECT` / `EMAIL_BODY_TEMPLATE` are not set, the pipeline falls back

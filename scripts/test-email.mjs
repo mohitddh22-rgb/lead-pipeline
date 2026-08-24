@@ -8,18 +8,18 @@ function check(name, cond) {
 
 // 1. default sender (live env read)
 delete process.env.FROM_EMAIL;
-check("default sender = sales@scapiab2b.com", getFromEmail() === "sales@scapiab2b.com");
+check("default sender = sales@spaciab2b.com", getFromEmail() === "sales@spaciab2b.com");
 
 // 2. custom sender honoured (live env read)
-process.env.FROM_EMAIL = "custom@scapiab2b.com";
-check("custom sender honoured", getFromEmail() === "custom@scapiab2b.com");
+process.env.FROM_EMAIL = "custom@spaciab2b.com";
+check("custom sender honoured", getFromEmail() === "custom@spaciab2b.com");
 
 const lead = { company: "Acme Realty", website: "https://acme.com", location: "Austin", email: "a@acme.com", region: "us" };
 
 // 3. fallback when no templates configured
 delete process.env.EMAIL_SUBJECT; delete process.env.EMAIL_BODY_TEMPLATE;
 let m = buildEmail(lead);
-check("fallback sender used", m.from === "custom@scapiab2b.com");
+check("fallback sender used", m.from === "custom@spaciab2b.com");
 check("fallback subject mentions company", m.subject.includes("Acme Realty"));
 check("fallback html has unsubscribe link", m.html.includes("Unsubscribe"));
 
