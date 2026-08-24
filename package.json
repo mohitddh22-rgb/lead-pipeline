@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "googleapis": "^144.0.0",
-    "resend": "^3.5.0"
+    "resend": "^3.5.0",
+    "@upstash/qstash": "^2.0.0",
+    "@upstash/redis": "^1.28.0"
   },
   "engines": { "node": ">=18" }
 }

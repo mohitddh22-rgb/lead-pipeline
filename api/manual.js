@@ -1,4 +1,4 @@
-import { assertAuthorized, authHeader } from "../../lib/auth.js";
+import { assertAuthorized, authHeader } from "../lib/auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET")

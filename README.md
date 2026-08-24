@@ -34,3 +34,30 @@ GDPR (EU): lawful basis for B2B contact, honour opt-outs within 30 days.
 Australian Spam Act: consent required, sender ID, functional unsubscribe.
 Only email business addresses from public sources; honour unsubscribes immediately.
 This scaffold is infrastructure, not legal advice.
+
+## New: Next.js App Router version, QStash queue mode, and unsubscribe
+
+### 1) Next.js App Router
+`app/api/**/route.js` mirrors the `api/` Vercel Functions. They expose the SAME
+URLs (`/api/worker`, `/api/email/send`, `/api/cron/batch-process`, etc.).
+- To run as **standalone Vercel Functions**: deploy as-is (root `api/` is used; `app/` is ignored).
+- To run as a **Next.js app**: add `next`, `react`, `react-dom` to dependencies and
+  **delete the root `api/` directory** to avoid duplicate-route errors. The shared
+  logic in `lib/` is used by both.
+
+### 2) Upstash QStash queue mode (scale to thousands of leads)
+When `QSTASH_TOKEN` (+ signing keys) is set:
+- The cron dispatcher enqueues ONE job per region to `/api/queue-worker` instead of
+  calling `/api/worker` directly.
+- Each region worker enqueues ONE job per lead to `/api/queue-email`.
+- The `queue-*` endpoints verify the QStash signature (`upstash-signature`) before
+  doing work, so the URLs are safe to expose.
+- Set `Upstash-Delay` (in lib/queue.js `enqueue`) to pace sends (e.g. spread 1000
+  emails over the day to respect provider limits).
+
+### 3) Unsubscribe + suppression
+- `/api/unsubscribe?email=foo@bar.com` (GET) records the opt-out in Upstash Redis
+  (`lead:skews:suppressions`) and renders a confirmation page. The same URL is in the
+  email footer and the `List-Unsubscribe` header.
+- Before enqueueing/sending, the pipeline checks `isSuppressed(email)` and skips it.
+- Without `UPSTASH_REDIS_REST_URL`/`TOKEN`, suppression is disabled (a warning is logged).
