@@ -1,0 +1,17 @@
+{
+  "name": "lead-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Serverless real-estate lead generation + cold outreach pipeline for Vercel",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "resend": "^3.5.0"
+  },
+  "engines": { "node": ">=18" }
+}

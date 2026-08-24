@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "crons": [
+    { "path": "/api/cron/batch-process", "schedule": "0 9 * * *" }
+  ],
+  "functions": {
+    "api/cron/batch-process.js": { "maxDuration": 60 },
+    "api/worker.js":              { "maxDuration": 60 },
+    "api/email/send.js":          { "maxDuration": 30 }
+  }
+}
