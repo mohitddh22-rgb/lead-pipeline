@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node scripts/test-email.mjs",
     "deploy": "vercel deploy --prod",
     "smoke": "node scripts/smoke.mjs"
   },

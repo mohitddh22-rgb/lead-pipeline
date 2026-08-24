@@ -61,3 +61,11 @@ When `QSTASH_TOKEN` (+ signing keys) is set:
   email footer and the `List-Unsubscribe` header.
 - Before enqueueing/sending, the pipeline checks `isSuppressed(email)` and skips it.
 - Without `UPSTASH_REDIS_REST_URL`/`TOKEN`, suppression is disabled (a warning is logged).
+
+## Dynamic email templates
+Outbound cold email is fully configurable without code changes:
+- `FROM_EMAIL` — sender (defaults to `sales@scapiab2b.com`).
+- `EMAIL_SUBJECT` — subject template; supports `{{company}} {{location}} {{email}} {{region}} {{website}}`.
+- `EMAIL_BODY_TEMPLATE` — HTML body template with the same placeholders.
+When `EMAIL_SUBJECT` / `EMAIL_BODY_TEMPLATE` are not set, the pipeline falls back
+to auto-generated lead messaging. Run `npm test` to exercise the template logic.
