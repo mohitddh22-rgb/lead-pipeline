@@ -16,25 +16,29 @@ export default async function handler(req, res) {
     (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
     process.env.PUBLIC_BASE_URL || "http://localhost:3000";
 
+  // Allow optional region filter: ?region=us or region=eu or region=au
+  const region = req.query?.region || undefined;
+
   try {
     // 1. Scrape leads via OSM Overpass (US, EU, AU regions)
-    const regions = ['us', 'eu', 'au'];
+    // Default to all regions if none specified
+    const regions = region ? [region] : ['us', 'eu', 'au'];
     const allNewLeads = [];
 
     for (const region of regions) {
       console.log(`[manual] Scraping region: ${region}`);
       const leads = await scrapeLeads(region);
-      
+
       // Dedup against existing sheet records + in-memory run set
       const existingKeys = await getExistingKeys();
-      
+
       for (const lead of leads) {
         const domain = lead.domain || '';
         const email = lead.email || '';
-        
+
         // Skip if we've already seen this domain in this run
         if (runSeenDomains.has(domain)) continue;
-        
+
         // Skip if already in Sheets (by domain or email)
         const domainKey = 'w:' + domain.toLowerCase();
         const emailKey = 'e:' + email.toLowerCase();
@@ -42,13 +46,13 @@ export default async function handler(req, res) {
           console.log(`[manual] Dedup: skipping ${lead.company} (already in sheet)`);
           continue;
         }
-        
+
         // Validate email before adding
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           console.warn(`[manual] Invalid email for ${lead.company}: ${email}`);
           lead.email = '';
         }
-        
+
         runSeenDomains.add(domain);
         allNewLeads.push(lead);
       }
@@ -65,15 +69,15 @@ export default async function handler(req, res) {
     let emailsSent = 0;
     for (const lead of allNewLeads) {
       if (!lead.email) continue; // Skip leads without valid email
-      
+
       try {
         await sendColdEmail(lead);
         emailsSent++;
-        
+
         // Mark as emailed in the sheet
         await markEmailed(lead.email);
         console.log(`[manual] Sent email to ${lead.email} (${lead.company})`);
-        
+
         // Small delay to avoid hitting Resend rate limits
         await new Promise(r => setTimeout(r, 500));
       } catch (e) {
