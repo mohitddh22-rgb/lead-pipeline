@@ -104,4 +104,4 @@ export async function POST(req) {
     console.error("[manual] unhandled error:", e);
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
-}
+}// CACHE-BUST-2026-08-28 manual route v2
