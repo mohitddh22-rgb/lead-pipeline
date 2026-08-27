@@ -5,8 +5,8 @@
     { "path": "/api/cron/batch-process", "schedule": "0 9 * * *" }
   ],
   "functions": {
-    "api/cron/batch-process.js": { "maxDuration": 60 },
-    "api/worker.js":              { "maxDuration": 60 },
-    "api/email/send.js":          { "maxDuration": 30 }
+    "app/api/cron/batch-process/route.js": { "maxDuration": 60 },
+    "app/api/worker/route.js":              { "maxDuration": 60 },
+    "app/api/email/send/route.js":         { "maxDuration": 30 }
   }
 }
