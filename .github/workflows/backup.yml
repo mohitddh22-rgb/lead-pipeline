@@ -1,0 +1,32 @@
+name: Backup main on push
+
+# After every successful push to `main`, mirror `main` into the `backup`
+# branch so there is always a recoverable snapshot of the live/production code.
+# Runs on the live commit, no manual action required.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync backup branch to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Hard-reset backup to exactly match main, then push.
+          git branch -f backup origin/main
+          git push --force origin backup
