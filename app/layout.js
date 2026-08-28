@@ -1,5 +1,7 @@
+import "./globals.css";
+
 export const metadata = {
-  title: "Lead Pipeline",
+  title: "Lead Pipeline — Control Center",
   description: "Real-estate lead generation + cold outreach pipeline monitor",
 };
 
