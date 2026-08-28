@@ -62,6 +62,7 @@ export default function Dashboard() {
     { id: "settings", icon: SettingsIcon, label: "Settings" },
   ];
 
+  // Mobile nav state lives in `view`; sync bottom bar to it.
   return (
     <div className="min-h-screen bg-bg flex text-slate-800">
       <aside className="hidden md:flex w-60 flex-col bg-white border-r border-border p-4">
@@ -84,23 +85,23 @@ export default function Dashboard() {
       </aside>
 
       <div className="flex-1 flex flex-col">
-        <header className="flex items-center gap-4 px-6 py-4 bg-white border-b border-border">
-          <div className="relative flex-1 max-w-md">
+        <header className="flex items-center gap-3 flex-wrap px-4 sm:px-6 py-3 bg-white border-b border-border">
+          <div className="relative flex-1 min-w-[180px] w-full sm:w-auto order-first">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input placeholder="Search leads, logs, or regions..." className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-border text-sm outline-none focus:border-brand" />
           </div>
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${operational ? "bg-emerald-50 text-brand" : "bg-amber-50 text-amber-600"}`}>
             {operational ? <CircleCheck size={14} /> : <CircleAlert size={14} />} {overall}
           </div>
-          <button onClick={() => runRegion("all")} className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
+          <button onClick={() => runRegion("all")} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
             <Plus size={16} /> Run Full Pipeline
           </button>
-          <a href={`https://docs.google.com/spreadsheets/d/${process.env.NEXT_PUBLIC_SHEET_ID || ""}`} className="flex items-center gap-1.5 border border-border text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-slate-50 transition">
+          <a href={`https://docs.google.com/spreadsheets/d/${process.env.NEXT_PUBLIC_SHEET_ID || ""}`} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-border text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-slate-50 transition">
             <Upload size={16} /> Import Leads
           </a>
         </header>
 
-        <main className="p-6">
+        <main className="p-4 sm:p-6 pb-24 md:pb-6">
           {view === "dashboard" && <DashboardView data={data} business={business} health={health} probes={probes} architecture={architecture} cron={cron} leads={leads} runRegion={runRegion} busy={busy} conversion={conversion} sentTotal={sentTotal} bounce24h={bounce24h} />}
           {view === "pipeline" && <LeadPipelineView allLeads={allLeads} />}
           {view === "analytics" && <AnalyticsView business={business} allLeads={allLeads} conversion={conversion} />}
@@ -108,6 +109,17 @@ export default function Dashboard() {
           {view === "settings" && <SettingsView data={data} runRegion={runRegion} busy={busy} />}
         </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-border grid grid-cols-5">
+        {nav.map((n) => (
+          <button key={n.id} onClick={() => setView(n.id)}
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition ${view === n.id ? "text-brand" : "text-slate-400"}`}>
+            <n.icon size={20} />
+            {n.label.split(" ")[0]}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
