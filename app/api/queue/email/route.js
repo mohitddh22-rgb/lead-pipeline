@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyQstash } from "../../../../lib/queue.js";
 import { sendColdEmail } from "../../../../lib/email.js";
 import { markEmailed } from "../../../../lib/sheets.js";
+import { checkDeliverable } from "../../../../lib/verify.js";
 import { SHEET_NAME } from "../../../../lib/config.js";
 
 export const runtime = "nodejs";
@@ -16,6 +17,8 @@ export async function POST(req) {
   try {
     const { lead } = JSON.parse(raw || "{}");
     if (!lead || !lead.email) return NextResponse.json({ ok: false, error: "lead.email required" }, { status: 400 });
+    const v = await checkDeliverable(lead.email);
+    if (!v.ok) return NextResponse.json({ ok: false, error: `undeliverable:${v.reason}`, skipped: true }, { status: 422 });
     const sent = await sendColdEmail(lead);
     await markEmailed(lead.email, SHEET_NAME);
     return NextResponse.json({ ok: true, id: sent?.id });
