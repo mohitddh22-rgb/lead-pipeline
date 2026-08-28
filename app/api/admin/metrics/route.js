@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorized } from "../../../../lib/authApp.js";
-import { getLeadStats } from "../../../../lib/dashboard.js";
+import { getLeadStats, getAllLeads } from "../../../../lib/dashboard.js";
 import { SPREADSHEET_ID } from "../../../../lib/config.js";
 
 export const runtime = "nodejs";
@@ -58,6 +58,7 @@ export async function GET(req) {
 
     // --- Business / Sales Metrics: read from Sheets ---
     const stats = await getLeadStats();
+    const allLeads = await getAllLeads();
 
     // Resend email stats (if key present) - best-effort
     let emailStats = null;
@@ -147,7 +148,18 @@ export async function GET(req) {
         msToNext,
       },
       leads: stats?.recent || [],
+      allLeads,
       sheetsConfigured: !!SPREADSHEET_ID,
+      // Env connectivity status (booleans only — values never leave the server).
+      envStatus: {
+        GOOGLE_SHEETS_CREDENTIALS: !!process.env.GOOGLE_SHEETS_CREDENTIALS,
+        SPREADSHEET_ID: !!SPREADSHEET_ID,
+        RESEND_API_KEY: !!process.env.RESEND_API_KEY,
+        CRON_SECRET: !!process.env.CRON_SECRET,
+        FROM_EMAIL: !!process.env.FROM_EMAIL || true,
+        QSTASH_TOKEN: !!process.env.QSTASH_TOKEN,
+        UNSUBSCRIBE_URL: !!process.env.UNSUBSCRIBE_URL,
+      },
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
