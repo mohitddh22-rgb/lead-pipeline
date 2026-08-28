@@ -60,8 +60,37 @@ export async function GET(req) {
     const stats = await getLeadStats();
     const allLeads = await getAllLeads();
 
-    // Resend email stats (if key present) - best-effort
-    let emailStats = null;
+    // Resend sending-domain verification status (SPF/DKIM/verified) — best-effort.
+    let resendDomain = null;
+    try {
+      const key = process.env.RESEND_API_KEY;
+      const fromEmail = process.env.FROM_EMAIL || "sales@spaciab2b.com";
+      const domain = fromEmail.split("@")[1];
+      if (key && domain) {
+        const res = await fetch("https://api.resend.com/domains", {
+          headers: { Authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (res.ok) {
+          const j = await res.json();
+          const match = (j.data || []).find((d) => d.name === domain);
+          if (match) {
+            resendDomain = {
+              name: domain,
+              verified: !!match.verified,
+              spf: !!(match.spf && match.spf[0] && match.spf[0].valid),
+              dkim: !!(match.dkim && match.dkim[0] && match.dkim[0].valid),
+              testMode: match.test_mode === true,
+            };
+          } else {
+            resendDomain = { name: domain, found: false };
+          }
+        }
+      }
+    } catch (e) {
+      resendDomain = { error: e.message };
+    }
+
     try {
       const key = process.env.RESEND_API_KEY;
       if (key) {
@@ -149,6 +178,7 @@ export async function GET(req) {
       },
       leads: stats?.recent || [],
       allLeads,
+      resendDomain,
       sheetsConfigured: !!SPREADSHEET_ID,
       // Env connectivity status (booleans only — values never leave the server).
       envStatus: {

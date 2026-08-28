@@ -348,6 +348,17 @@ function HealthView({ health, probes, architecture, cron, runRegion, busy }) {
 function SettingsView({ data, runRegion, busy }) {
   const envKeys = ["GOOGLE_SHEETS_CREDENTIALS", "SPREADSHEET_ID", "RESEND_API_KEY", "CRON_SECRET", "FROM_EMAIL", "QSTASH_TOKEN", "UNSUBSCRIBE_URL"];
   const envStatus = data.envStatus || {};
+  const rd = data.resendDomain;
+
+  // Deliverability checklist items (each: done boolean + label + hint).
+  const checks = [
+    { done: !!rd && rd.verified, label: `Domain ${rd?.name || "spaciab2b.com"} verified`, hint: "Verify ownership in Resend → Domains" },
+    { done: !!rd && rd.spf, label: "SPF record valid", hint: "Add the TXT SPF record Resend shows" },
+    { done: !!rd && rd.dkim, label: "DKIM record valid", hint: "Add the DKIM CNAME records Resend shows" },
+    { done: !!rd && rd.verified && rd.spf && rd.dkim, label: "Out of test mode", hint: rd?.testMode ? "On paid plan / verified domain, test mode auto-disables" : "Already enabled" },
+    { done: true, label: "Pre-send MX + generic-inbox gate active", hint: "lib/verify.js blocks dead/generic addresses (live)" },
+  ];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card title="Environment & Connections">
@@ -365,6 +376,31 @@ function SettingsView({ data, runRegion, busy }) {
         </div>
         <p className="text-xs text-slate-400 mt-3">Secrets are read from Vercel Environment Variables. Values are never exposed to the client.</p>
       </Card>
+
+      <Card title="Email Deliverability Checklist">
+        <div className="space-y-2">
+          {checks.map((c, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-slate-100">
+              <div className={`mt-0.5 ${c.done ? "text-brand" : "text-amber-500"}`}>{c.done ? <CircleCheck size={18} /> : <CircleAlert size={18} />}</div>
+              <div className="flex-1">
+                <div className={`text-sm font-medium ${c.done ? "text-slate-700" : "text-slate-600"}`}>{c.label}</div>
+                <div className="text-xs text-slate-400">{c.hint}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {rd && rd.testMode && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2.5 rounded-xl">
+            <CircleAlert size={14} /> Test mode ON — emails only deliver to addresses on your verified domain.
+          </div>
+        )}
+        {rd && rd.found === false && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2.5 rounded-xl">
+            <CircleAlert size={14} /> Domain {rd.name} not found in Resend — add & verify it to send to any address.
+          </div>
+        )}
+      </Card>
+
       <Card title="Automation">
         <div className="space-y-2">
           {["us", "eu", "au", "all"].map((r) => (
