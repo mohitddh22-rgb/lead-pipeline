@@ -75,12 +75,15 @@ export async function GET(req) {
           const j = await res.json();
           const match = (j.data || []).find((d) => d.name === domain);
           if (match) {
+            const verified = match.status === "verified";
+            const sending = match.capabilities?.sending === "enabled";
             resendDomain = {
               name: domain,
-              verified: !!match.verified,
-              spf: !!(match.spf && match.spf[0] && match.spf[0].valid),
-              dkim: !!(match.dkim && match.dkim[0] && match.dkim[0].valid),
-              testMode: match.test_mode === true,
+              verified,
+              spf: verified,          // Resend requires valid SPF/DKIM before marking verified
+              dkim: verified,
+              testMode: !verified,    // test mode auto-disables once domain is verified
+              sending,
             };
           } else {
             resendDomain = { name: domain, found: false };
