@@ -65,7 +65,7 @@ export async function GET(req) {
     try {
       const key = process.env.RESEND_API_KEY;
       const fromEmail = process.env.FROM_EMAIL || "sales@spaciab2b.com";
-      const domain = fromEmail.split("@")[1];
+      const domain = (fromEmail.split("@")[1] || "").replace(/[^a-z0-9.-]/gi, "").toLowerCase();
       if (key && domain) {
         const res = await fetch("https://api.resend.com/domains", {
           headers: { Authorization: `Bearer ${key}` },
