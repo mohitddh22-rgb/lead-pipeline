@@ -10,7 +10,7 @@ export async function POST(req) {
   if (!isAuthorized(req)) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   try {
     await ensureHeader();
-    return NextResponse.json({ ok: true, results: await dispatchRegions() });
+    return NextResponse.json({ ok: true, results: await dispatchRegions("cron") });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
