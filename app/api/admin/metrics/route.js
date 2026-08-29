@@ -94,6 +94,8 @@ export async function GET(req) {
       resendDomain = { error: e.message };
     }
 
+    // Resend email stats (if key present) - best-effort
+    let emailStats = null;
     try {
       const key = process.env.RESEND_API_KEY;
       if (key) {
