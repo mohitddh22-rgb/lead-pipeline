@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorized } from "../../../../lib/authApp.js";
 import { getLeadStats, getAllLeads } from "../../../../lib/dashboard.js";
+import { runLedger } from "../../../../lib/runLedger.js";
 import { SPREADSHEET_ID } from "../../../../lib/config.js";
 
 export const runtime = "nodejs";
@@ -180,6 +181,10 @@ export async function GET(req) {
         schedule: "0 9 * * *",
         nextRunISO: next.toISOString(),
         msToNext,
+      },
+      run: {
+        inProgress: runLedger.inProgress,
+        last: runLedger.last,
       },
       leads: stats?.recent || [],
       allLeads,
