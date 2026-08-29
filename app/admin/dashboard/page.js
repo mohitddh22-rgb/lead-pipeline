@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Filter, BarChart3, Activity, Settings as SettingsIcon,
   Search, Plus, Upload, ArrowUpRight, Server, Database, Mail, Bot, RefreshCw,
   CircleCheck, CircleAlert, CircleDashed, Zap, Gauge, Download, Globe,
-  Clock, ShieldCheck, ExternalLink, Play,
+  Clock, ShieldCheck, ExternalLink, Play, Loader2,
 } from "lucide-react";
 
 const KEY = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("key") || "" : "";
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [err, setErr] = useState(null);
   const [view, setView] = useState("dashboard");
   const [busy, setBusy] = useState({});
+  const [runMsg, setRunMsg] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -33,7 +34,16 @@ export default function Dashboard() {
 
   const runRegion = async (region) => {
     setBusy((b) => ({ ...b, [region]: true }));
-    try { await fetch(MANUAL(region), { method: "POST", headers: { Authorization: `Bearer ${KEY}` } }); } catch (e) {}
+    setRunMsg({ type: "running", region });
+    try {
+      const res = await fetch(MANUAL(region), { method: "POST", headers: { Authorization: `Bearer ${KEY}` } });
+      const j = await res.json();
+      if (j.ok) setRunMsg({ type: "done", region: j.region || region, scraped: j.scraped, added: j.added, skipped: j.skipped, emails: j.emailsQueued });
+      else if (j.inProgress) setRunMsg({ type: "busy" });
+      else setRunMsg({ type: "error", error: j.error });
+    } catch (e) {
+      setRunMsg({ type: "error", error: e.message });
+    }
     setBusy((b) => ({ ...b, [region]: false }));
     setTimeout(load, 1500);
   };
@@ -93,13 +103,16 @@ export default function Dashboard() {
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${operational ? "bg-emerald-50 text-brand" : "bg-amber-50 text-amber-600"}`}>
             {operational ? <CircleCheck size={14} /> : <CircleAlert size={14} />} {overall}
           </div>
-          <button onClick={() => runRegion("all")} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
-            <Plus size={16} /> Run Full Pipeline
+          <button onClick={() => runRegion("all")} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-60" disabled={busy.all}>
+            {busy.all ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Run Full Pipeline
           </button>
           <a href={`https://docs.google.com/spreadsheets/d/${process.env.NEXT_PUBLIC_SHEET_ID || ""}`} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-border text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-slate-50 transition">
             <Upload size={16} /> Import Leads
           </a>
         </header>
+
+        {/* PIPELINE RUN STATUS — visible feedback for manual + cron runs */}
+        <RunStatusBanner runMsg={runMsg} lastRun={data.run} loading={busy.all || busy.us || busy.eu || busy.au} />
 
         <main className="p-4 sm:p-6 pb-24 md:pb-6">
           {view === "dashboard" && <DashboardView data={data} business={business} health={health} probes={probes} architecture={architecture} cron={cron} leads={leads} runRegion={runRegion} busy={busy} conversion={conversion} sentTotal={sentTotal} bounce24h={bounce24h} />}
@@ -415,6 +428,71 @@ function SettingsView({ data, runRegion, busy }) {
       </Card>
     </div>
   );
+}
+
+/* ---------------- RUN STATUS BANNER ---------------- */
+function RunStatusBanner({ runMsg, lastRun, loading }) {
+  // Prefer the in-session runMsg; fall back to lastRun from the server ledger.
+  const running = loading || (lastRun && lastRun.inProgress);
+  if (runMsg && runMsg.type === "running") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-brand/10 border border-brand/20 px-4 py-3 text-brand text-sm font-semibold">
+        <Loader2 size={18} className="animate-spin" /> Running pipeline for <span className="uppercase">{runMsg.region}</span>… scraping, storing & emailing.
+      </div>
+    );
+  }
+  if (runMsg && runMsg.type === "done") {
+    const { region, scraped, added, skipped, emails } = runMsg;
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm">
+        <CircleCheck size={18} className="text-brand" />
+        <span className="font-semibold text-slate-700">Run complete ({region})</span>
+        <span className="text-slate-500">Scraped {scraped}</span>
+        <span className="text-slate-500">· Added {added}</span>
+        <span className="text-slate-500">· Skipped {skipped}</span>
+        <span className="text-slate-500">· Emails {emails}</span>
+      </div>
+    );
+  }
+  if (runMsg && runMsg.type === "error") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm text-rose-600">
+        <CircleAlert size={18} /> Run failed: {runMsg.error}
+      </div>
+    );
+  }
+  if (runMsg && runMsg.type === "busy") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-600">
+        <Loader2 size={18} className="animate-spin" /> Another run is already in progress.
+      </div>
+    );
+  }
+  if (running) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-brand/10 border border-brand/20 px-4 py-3 text-brand text-sm font-semibold">
+        <Loader2 size={18} className="animate-spin" /> Pipeline run in progress…
+      </div>
+    );
+  }
+  if (lastRun && lastRun.last) {
+    const r = lastRun.last;
+    const when = r.at ? new Date(r.at).toLocaleString() : "";
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-sm text-slate-500">
+        <Clock size={16} />
+        <span className="font-semibold text-slate-600">Last run</span>
+        <span>{(r.region || "all").toUpperCase()}</span>
+        <span>· Scraped {r.scraped ?? 0}</span>
+        <span>· Added {r.added ?? 0}</span>
+        <span>· Skipped {r.skipped ?? 0}</span>
+        <span>· Emails {r.emailsQueued ?? 0}</span>
+        {r.ms ? <span>· {Math.round(r.ms / 1000)}s</span> : null}
+        <span className="ml-auto text-xs">{when}</span>
+      </div>
+    );
+  }
+  return null;
 }
 
 /* ---------------- SHARED ---------------- */
